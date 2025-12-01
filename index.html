@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Location Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .info-value {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .history-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .history-time {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .history-coords {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .accuracy {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📍 Real-Time Location Tracker</h1>
+            <p class="subtitle">Track your current location with precision</p>
+        </header>
+        
+        <div class="card controls">
+            <div id="status" class="status inactive">● Tracking Inactive</div>
+            <br><br>
+            <button id="startBtn" class="btn" onclick="startTracking()">Start Tracking</button>
+            <button id="stopBtn" class="btn btn-stop" onclick="stopTracking()" style="display:none;">Stop Tracking</button>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">Current Location</h2>
+            
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Latitude</div>
+                    <div class="info-value" id="latitude">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Longitude</div>
+                    <div class="info-value" id="longitude">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Accuracy</div>
+                    <div class="info-value" id="accuracy">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Altitude</div>
+                    <div class="info-value" id="altitude">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Speed</div>
+                    <div class="info-value" id="speed">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Last Updated</div>
+                    <div class="info-value" id="timestamp" style="font-size: 14px;">--</div>
+                </div>
+            </div>
+            
+            <div id="map"></div>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">Location History</h2>
+            <div class="history" id="history">
+                <p style="text-align: center; color: #999;">No tracking data yet. Start tracking to see history.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let watchId = null;
+        let map = null;
+        let marker = null;
+        let locationHistory = [];
+        
+        function initMap(lat, lng) {
+            const mapDiv = document.getElementById('map');
+            mapDiv.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 10px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lng}" allowfullscreen></iframe>`;
+        }
+        
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('status').className = 'status active';
+            document.getElementById('status').textContent = '● Tracking Active';
+            
+            watchId = navigator.geolocation.watchPosition(
+                updateLocation,
+                handleError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        function stopTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('status').className = 'status inactive';
+            document.getElementById('status').textContent = '● Tracking Inactive';
+        }
+        
+        function updateLocation(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const altitude = position.coords.altitude;
+            const speed = position.coords.speed;
+            const timestamp = new Date(position.timestamp);
+            
+            // Update display
+            document.getElementById('latitude').textContent = lat.toFixed(6);
+            document.getElementById('longitude').textContent = lng.toFixed(6);
+            document.getElementById('accuracy').textContent = accuracy.toFixed(2) + ' m';
+            document.getElementById('altitude').textContent = altitude ? altitude.toFixed(2) + ' m' : 'N/A';
+            document.getElementById('speed').textContent = speed ? (speed * 3.6).toFixed(2) + ' km/h' : '0 km/h';
+            document.getElementById('timestamp').textContent = timestamp.toLocaleTimeString();
+            
+            // Update map
+            initMap(lat, lng);
+            
+            // Add to history
+            addToHistory(lat, lng, accuracy, timestamp);
+        }
+        
+        function addToHistory(lat, lng, accuracy, timestamp) {
+            locationHistory.unshift({lat, lng, accuracy, timestamp});
+            
+            if (locationHistory.length > 20) {
+                locationHistory.pop();
+            }
+            
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = locationHistory.map(item => `
+                <div class="history-item">
+                    <div class="history-time">${item.timestamp.toLocaleString()}</div>
+                    <div class="history-coords">
+                        ${item.lat.toFixed(6)}, ${item.lng.toFixed(6)}
+                        <span class="accuracy">±${item.accuracy.toFixed(0)}m</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function handleError(error) {
+            let message = 'An error occurred';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Location permission denied. Please enable location access.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Location request timed out.';
+                    break;
+            }
+            alert(message);
+            stopTracking();
+        }
+    </script>
+</body>
+</html>
